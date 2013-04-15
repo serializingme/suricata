@@ -72,6 +72,8 @@
 #include "detect-engine-dcepayload.h"
 #include "detect-engine-file.h"
 
+#include "detect-flowvar.h"
+
 #include "stream-tcp.h"
 #include "stream-tcp-private.h"
 #include "stream-tcp-reassemble.h"
@@ -795,6 +797,7 @@ int DeStateDetectContinueDetection(ThreadVars *tv, DetectEngineCtx *de_ctx, Dete
             SCLogDebug("signature %"PRIu32" match state %s",
                     s->id, DeStateMatchResultToString(det_ctx->de_state_sig_array[item->sid]));
 
+            DetectFlowvarProcessList(det_ctx, f);
             RULE_PROFILING_END(det_ctx, s, match);
 
         }
