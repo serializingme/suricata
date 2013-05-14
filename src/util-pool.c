@@ -40,6 +40,7 @@
 
 #include "suricata-common.h"
 #include "util-pool.h"
+#include "util-pool-thread.h"
 #include "util-unittest.h"
 #include "util-debug.h"
 
@@ -699,6 +700,8 @@ void PoolRegisterTests(void) {
     UtRegisterTest("PoolTestInit05", PoolTestInit05, 1);
     UtRegisterTest("PoolTestInit06", PoolTestInit06, 1);
     UtRegisterTest("PoolTestInit07", PoolTestInit07, 1);
+
+    PoolThreadRegisterTests();
 #endif /* UNITTESTS */
 }
 
