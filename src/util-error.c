@@ -271,6 +271,7 @@ const char * SCErrorToString(SCError err)
         CASE_CODE (SC_ERR_PCAP_FILE_DELETE_FAILED);
         CASE_CODE (SC_ERR_MAGIC_OPEN);
         CASE_CODE (SC_ERR_MAGIC_LOAD);
+        CASE_CODE (SC_WARN_OPTION_OBSOLETE);
     }
 
     return "UNKNOWN_ERROR";

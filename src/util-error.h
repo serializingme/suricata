@@ -260,6 +260,7 @@ typedef enum {
     SC_ERR_GEOIP_ERROR,
     SC_ERR_LIVE_RULE_SWAP,
     SC_WARN_UNCOMMON,
+    SC_WARN_OPTION_OBSOLETE,
 } SCError;
 
 const char *SCErrorToString(SCError);
