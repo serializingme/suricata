@@ -44,6 +44,8 @@
 #include "detect-engine-mpm.h"
 #include "detect-reference.h"
 #include "app-layer-parser.h"
+#include "app-layer-htp.h"
+#include "app-layer-htp-xff.h"
 #include "util-classification-config.h"
 #include "util-syslog.h"
 
@@ -74,6 +76,7 @@
 typedef struct AlertJsonOutputCtx_ {
     LogFileCtx* file_ctx;
     uint8_t flags;
+    XFFCfg *xff_cfg;
 } AlertJsonOutputCtx;
 
 typedef struct JsonAlertLogThread_ {
@@ -248,6 +251,38 @@ static int AlertJson(ThreadVars *tv, JsonAlertLogThread *aft, const Packet *p)
             unsigned char encoded_packet[len];
             Base64Encode((unsigned char*) GET_PKT_DATA(p), GET_PKT_LEN(p), encoded_packet, &len);
             json_object_set_new(js, "packet", json_string((char *)encoded_packet));
+        }
+
+        XFFCfg *xff_cfg = json_output_ctx->xff_cfg;
+
+        /* xff header */
+        if (!(xff_cfg->mode & XFF_DISABLED) && p->flow != NULL) {
+            int have_xff_ip = 0;
+
+            FLOWLOCK_RDLOCK(p->flow);
+            if (FlowGetAppProtocol(p->flow) == ALPROTO_HTTP) {
+                char buffer[XFF_MAXLEN];
+
+                if (pa->flags & PACKET_ALERT_FLAG_TX) {
+                    have_xff_ip = GetXFFIPFromTx(p, pa->tx_id, xff_cfg->header, buffer, XFF_MAXLEN);
+                } else {
+                    have_xff_ip = GetXFFIP(p, xff_cfg->header, buffer, XFF_MAXLEN);
+                }
+            }
+            FLOWLOCK_UNLOCK(p->flow);
+
+            if (have_xff_ip) {
+                if (xff_cfg->mode & XFF_EXTRADATA) {
+                    json_object_set_new(js, "xff", json_string(buffer));
+                }
+                else if (xff_cfg->mode & XFF_OVERWRITE) {
+                    if (p->flowflags & FLOW_PKT_TOCLIENT) {
+                        json_object_set(js, "dest_ip", json_string(buffer));
+                    } else {
+                        json_object_set(js, "src_ip", json_string(buffer));
+                    }
+                }
+            }
         }
 
         OutputJSONBuffer(js, aft->file_ctx, aft->json_buffer);
