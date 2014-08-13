@@ -23,6 +23,9 @@
  */
 
 #include "suricata-common.h"
+#include "conf.h"
+
+#include "util-misc.h"
 
 #include "app-layer-parser.h"
 #include "app-layer-htp.h"
@@ -32,6 +35,8 @@
 #define XFF_CHAIN_MINLEN 7
 /** XFF header value maximum length */
 #define XFF_CHAIN_MAXLEN 256
+/** Default XFF header name */
+#define XFF_DEFAULT "X-Forwarded-For"
 
 int GetXFFIPFromTx(const Packet *p, uint64_t tx_id, char *xff_header, char *dstbuf,
         int dstbuflen)
@@ -96,7 +101,7 @@ int GetXFFIP(const Packet *p, char *xff_header, char *dstbuf, int dstbuflen)
     HtpState *htp_state = NULL;
     uint64_t tx_id = 0;
     uint64_t total_txs = 0;
--
+
     htp_state = (HtpState *)FlowGetAppState(p->flow);
     if (htp_state == NULL) {
         SCLogDebug("no http state, XFF IP cannot be retrieved");
@@ -111,4 +116,44 @@ int GetXFFIP(const Packet *p, char *xff_header, char *dstbuf, int dstbuflen)
 
 end:
     return 0; // Not found
+}
+
+void GetXFFCfg(ConfNode *conf, XFFCfg *result)
+{
+    BUG_ON(conf == NULL || result == NULL);
+
+    ConfNode *xff_node = NULL;
+
+    if (conf != NULL)
+        xff_node = ConfNodeLookupChild(conf, "xff");
+
+    if (xff_node != NULL && ConfNodeChildValueIsTrue(xff_node, "enabled")) {
+        const char *xff_mode = ConfNodeLookupChildValue(xff_node, "mode");
+
+        if (xff_mode != NULL && strcasecmp(xff_mode, "overwrite") == 0) {
+            result->mode |= XFF_OVERWRITE;
+        } else {
+            if (xff_mode == NULL) {
+                SCLogWarning(SC_WARN_XFF_INVALID_MODE, "The XFF mode hasn't been defined, falling back to extra-data mode");
+            }
+            else if (strcasecmp(xff_mode, "extra-data") != 0) {
+                SCLogWarning(SC_WARN_XFF_INVALID_MODE, "The XFF mode %s is invalid, falling back to extra-data mode",
+                        xff_mode);
+            }
+            result->mode |= XFF_EXTRADATA;
+        }
+
+        const char *xff_header = ConfNodeLookupChildValue(xff_node, "header");
+
+        if (xff_header != NULL) {
+            result->header = (char *) xff_header;
+        } else {
+            SCLogWarning(SC_WARN_XFF_INVALID_HEADER, "The XFF header hasn't been defined, using the default %s",
+                    XFF_DEFAULT);
+            result->header = XFF_DEFAULT;
+        }
+    }
+    else {
+        result->mode = XFF_DISABLED;
+    }
 }
