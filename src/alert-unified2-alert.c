@@ -896,12 +896,11 @@ static int Unified2IPv6TypeAlert(ThreadVars *t, const Packet *p, void *data)
         XFFCfg *xff_cfg = aun->unified2alert_ctx->xff_cfg;
 
         if ((xff_cfg->mode & XFF_EXTRADATA) && p->flow != NULL) {
+            char buffer[XFF_MAXLEN];
             int have_xff_ip = 0;
 
             FLOWLOCK_RDLOCK(p->flow);
             if (FlowGetAppProtocol(p->flow) == ALPROTO_HTTP) {
-                char buffer[XFF_MAXLEN];
-
                 if (pa->flags & PACKET_ALERT_FLAG_TX) {
                     have_xff_ip = GetXFFIPFromTx(p, pa->tx_id, xff_cfg->header, buffer, XFF_MAXLEN);
                 } else {
@@ -1074,12 +1073,11 @@ static int Unified2IPv4TypeAlert (ThreadVars *tv, const Packet *p, void *data)
         XFFCfg *xff_cfg = aun->unified2alert_ctx->xff_cfg;
 
         if ((xff_cfg->mode & XFF_EXTRADATA) && p->flow != NULL) {
+            char buffer[XFF_MAXLEN];
             int have_xff_ip = 0;
 
             FLOWLOCK_RDLOCK(p->flow);
             if (FlowGetAppProtocol(p->flow) == ALPROTO_HTTP) {
-                char buffer[XFF_MAXLEN];
-
                 if (pa->flags & PACKET_ALERT_FLAG_TX) {
                     have_xff_ip = GetXFFIPFromTx(p, pa->tx_id, xff_cfg->header, buffer, XFF_MAXLEN);
                 } else {
@@ -1246,7 +1244,6 @@ OutputCtx *Unified2AlertInitCtx(ConfNode *conf)
     int ret = 0;
     LogFileCtx* file_ctx = NULL;
     OutputCtx* output_ctx = NULL;
-    ConfNode *xff_node = NULL;
 
     file_ctx = LogFileNewCtx();
     if (file_ctx == NULL) {
