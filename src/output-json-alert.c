@@ -504,6 +504,7 @@ static OutputCtx *JsonAlertLogInitCtxSub(ConfNode *conf, OutputCtx *parent_ctx)
         SCFree(output_ctx);
         return NULL;
     }
+    memset(json_output_ctx, 0, sizeof(AlertJsonOutputCtx));
 
     XFFCfg *xff_cfg = SCMalloc(sizeof(XFFCfg));
     if (unlikely(xff_cfg == NULL)) {
@@ -511,9 +512,8 @@ static OutputCtx *JsonAlertLogInitCtxSub(ConfNode *conf, OutputCtx *parent_ctx)
         SCFree(output_ctx);
         return NULL;
     }
-    memset(xff_cfg, 0x00, sizeof(XFFCfg));
+    memset(xff_cfg, 0, sizeof(XFFCfg));
 
-    memset(json_output_ctx, 0, sizeof(AlertJsonOutputCtx));
     json_output_ctx->file_ctx = ajt->file_ctx;
     json_output_ctx->xff_cfg = xff_cfg;
 
